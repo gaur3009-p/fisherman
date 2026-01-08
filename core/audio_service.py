@@ -5,8 +5,8 @@ class AudioService:
     def __init__(self):
         os.makedirs(Settings.AUDIO_DIR, exist_ok=True)
 
-    def save(self, audio_np, sample_rate):
+    def save(self, audio_np, sr):
         audio_id = str(uuid.uuid4())
         path = f"{Settings.AUDIO_DIR}/{audio_id}.wav"
-        sf.write(path, audio_np, sample_rate)
+        sf.write(path, audio_np, sr)
         return audio_id, path
