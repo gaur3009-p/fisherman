@@ -194,4 +194,4 @@ with gr.Blocks(title="NGO Enterprise Voice Intelligence Platform") as app:
 # LAUNCH APP
 # ---------------------------
 
-app.launch()
+app.launch(share=True)
