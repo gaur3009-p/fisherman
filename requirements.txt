@@ -1,0 +1,9 @@
+gradio
+openai-whisper
+torch
+soundfile
+numpy
+pandas
+faiss-cpu
+sentence-transformers
+pyttsx3
