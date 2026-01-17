@@ -58,11 +58,17 @@ def process_fisherman_voice(audio):
     record_id = str(uuid.uuid4())
     _, audio_path = audio_service.save(audio_np, sample_rate)
 
-    # 2. Speech to Text (native language)
     native_text, language = asr_service.transcribe(audio_path)
 
-    # 3. Translate to English
+    # SAFETY: if transcription is empty or junk
+    if len(native_text) < 5:
+        native_text = "Unable to clearly transcribe speech."
+    
     english_text = translation_service.to_english(audio_path)
+    
+    # SAFETY: avoid hallucinated translations
+    if len(english_text) < 5:
+        english_text = "Translation unclear. Needs human review."
 
     # 4. Retrieve RAG context (past NGO cases)
     rag_context = rag_engine.retrieve(english_text)
