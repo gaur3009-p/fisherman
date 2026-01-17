@@ -7,3 +7,4 @@ pandas
 faiss-cpu
 sentence-transformers
 pyttsx3
+gtts
