@@ -1,7 +1,6 @@
 import whisper
 import torch
 
-
 class WhisperService:
     _model = None
 
@@ -9,7 +8,7 @@ class WhisperService:
     def get_model(cls):
         if cls._model is None:
             cls._model = whisper.load_model(
-                "medium",   # SAFE for Kaggle/Colab
+                "large-v3",
                 device="cuda" if torch.cuda.is_available() else "cpu"
             )
         return cls._model
