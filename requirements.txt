@@ -1,7 +1,8 @@
 torch>=2.2.0
 faster-whisper
 ctranslate2
-
+IndicTransToolkit
+protobuf
 transformers>=4.38.0
 sentencepiece
 
