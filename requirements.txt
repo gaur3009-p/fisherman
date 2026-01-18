@@ -1,18 +1,9 @@
-# Core ML
-torch>=2.2.0
 openai-whisper
-
-# Translation
+torch>=2.2.0
 transformers>=4.38.0
 sentencepiece
-
-# TTS (CPU)
 TTS>=0.22.0
-
-# App
 gradio>=4.20.0
-
-# Utils
 soundfile
 numpy
 pandas
