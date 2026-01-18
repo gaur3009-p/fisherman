@@ -1,9 +1,13 @@
-openai-whisper
 torch>=2.2.0
+faster-whisper
+ctranslate2
+
 transformers>=4.38.0
 sentencepiece
+
 TTS>=0.22.0
 gradio>=4.20.0
+
 soundfile
 numpy
 pandas
