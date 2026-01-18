@@ -1,14 +1,18 @@
 from core.whisper_service import WhisperService
 
-
 class ASRService:
     def __init__(self):
         self.model = WhisperService.get_model()
 
-    def transcribe(self, audio_path):
-        result = self.model.transcribe(
+    def transcribe(self, audio_path: str):
+        segments, info = self.model.transcribe(
             audio_path,
-            task="transcribe",
-            temperature=0.0
+            language="or",          
+            beam_size=5,
+            vad_filter=True
         )
-        return result.get("text", "").strip(), result.get("language", "unknown")
+
+        text = " ".join(seg.text.strip() for seg in segments)
+        language = info.language
+
+        return text.strip(), language
