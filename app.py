@@ -64,8 +64,7 @@ def process_fisherman_voice(audio):
     if len(native_text) < 5:
         native_text = "Unable to clearly transcribe speech."
     
-    english_text = translation_service.to_english(audio_path)
-    
+    english_text = translation_service.to_english_from_text(native_text)    
     # SAFETY: avoid hallucinated translations
     if len(english_text) < 5:
         english_text = "Translation unclear. Needs human review."
