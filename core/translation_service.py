@@ -4,27 +4,24 @@ import torch
 
 class TranslationService:
     """
-    Odia → English translation using NLLB (modern Transformers API).
-    Python 3.12 compatible.
+    Odia → English translation using IndicTrans2 (AI4Bharat).
+    BEST model for Indian languages.
     """
 
     def __init__(self):
-        self.model_name = "facebook/nllb-200-distilled-600M"
+        self.model_name = "ai4bharat/indictrans2-od-en-dist-200M"
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_name,
-            use_fast=False
+            trust_remote_code=True
         )
 
         self.model = AutoModelForSeq2SeqLM.from_pretrained(
-            self.model_name
-        ).to("cpu")
+            self.model_name,
+            trust_remote_code=True
+        )
 
-        # Set source language (Odia)
-        self.tokenizer.src_lang = "ory_Orya"
-
-        # Cache target language token ID (English)
-        self.tgt_lang_token_id = self.tokenizer.convert_tokens_to_ids("eng_Latn")
+        self.model.to("cpu")  # safe for Kaggle / Python 3.12
 
     def to_english_from_text(self, odia_text: str) -> str:
         inputs = self.tokenizer(
@@ -37,14 +34,11 @@ class TranslationService:
         with torch.no_grad():
             output = self.model.generate(
                 **inputs,
-                forced_bos_token_id=self.tgt_lang_token_id,
                 max_length=128,
                 num_beams=5
             )
 
-        translation = self.tokenizer.decode(
+        return self.tokenizer.decode(
             output[0],
             skip_special_tokens=True
-        )
-
-        return translation.strip()
+        ).strip()
