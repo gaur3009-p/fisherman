@@ -5,14 +5,16 @@ class ASRService:
         self.model = WhisperService.get_model()
 
     def transcribe(self, audio_path: str):
+        """
+        Transcribe Odia (and other Indian languages) using auto-detection.
+        """
         segments, info = self.model.transcribe(
             audio_path,
-            language="or",          
             beam_size=5,
             vad_filter=True
         )
 
         text = " ".join(seg.text.strip() for seg in segments)
-        language = info.language
+        language = info.language  # may return 'hi', 'bn', etc.
 
         return text.strip(), language
