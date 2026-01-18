@@ -5,7 +5,7 @@ ctranslate2
 transformers>=4.38.0
 sentencepiece
 
-TTS>=0.22.0
+gTTS
 gradio>=4.20.0
 
 soundfile
