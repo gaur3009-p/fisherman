@@ -34,9 +34,20 @@ class TranslationService:
                 max_new_tokens=256
             )
     
-        # IMPORTANT: decode only the first sequence
-        translation = self.processor.decode(
-            generated_tokens[0],
+        # ---- BULLETPROOF DECODING ----
+        tokens = generated_tokens
+    
+        # Convert tensor → list
+        if hasattr(tokens, "tolist"):
+            tokens = tokens.tolist()
+    
+        # Flatten nested lists safely
+        while isinstance(tokens, list) and len(tokens) == 1:
+            tokens = tokens[0]
+    
+        # Now tokens is a flat list[int]
+        translation = self.processor.tokenizer.decode(
+            tokens,
             skip_special_tokens=True
         )
     
