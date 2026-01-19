@@ -35,7 +35,6 @@ dataset_manager = DatasetManager()
 # ---------------------------
 # MAIN PIPELINE (END-TO-END)
 # ---------------------------
-
 def process_fisherman_voice(audio):
     if audio is None:
         return (
@@ -52,22 +51,19 @@ def process_fisherman_voice(audio):
     sample_rate, audio_np = audio
     record_id, audio_path = audio_service.save(audio_np, sample_rate)
 
-    # 2. ASR
+    # 2. ASR (Odia → Odia script)
     native_text, language = asr_service.transcribe(audio_path)
 
     if not native_text or len(native_text.strip()) < 5:
         native_text = "Unable to clearly transcribe speech."
 
-    # 3. Translation (ONLY for Odia)
-    if language == "or":
-        english_text = translation_service.to_english_from_text(native_text)
-    else:
-        english_text = native_text
+    # 3. Translation (Odia → English)
+    english_text = translation_service.to_english_from_text(native_text)
 
     if not english_text or len(english_text.strip()) < 5:
         english_text = "Translation unclear. Needs human review."
 
-    # 4. RAG (skip junk)
+    # 4. RAG
     if "unclear" in english_text.lower():
         rag_context = "No similar past cases found."
     else:
@@ -85,7 +81,7 @@ def process_fisherman_voice(audio):
         f"The emotional condition of the fisherman appears {sentiment.lower()}."
     )
 
-    # 7. Vector memory (skip junk)
+    # 7. Vector memory
     if "unclear" not in english_text.lower():
         vector_store.add(english_text)
 
@@ -121,7 +117,6 @@ def process_fisherman_voice(audio):
         ngo_action,
         tts_audio_path
     )
-
 # ---------------------------
 # GRADIO ENTERPRISE UI
 # ---------------------------
