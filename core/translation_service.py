@@ -32,25 +32,15 @@ class TranslationService:
             generated_tokens = self.model.generate(
                 **inputs,
                 tgt_lang=self.tgt_lang,
-                max_new_tokens=256,
-                return_dict_in_generate=False,
-                output_scores=False
+                max_new_tokens=256
             )
     
-        # Tensor → list
-        if hasattr(generated_tokens, "tolist"):
-            tokens = generated_tokens.tolist()
-        else:
-            tokens = generated_tokens
-    
-        # Flatten
-        while isinstance(tokens, list) and len(tokens) == 1:
-            tokens = tokens[0]
+        # ✅ remove batch dimension safely
+        token_ids = generated_tokens[0].cpu().tolist()
     
         translation = self.processor.tokenizer.decode(
-            tokens,
+            token_ids,
             skip_special_tokens=True
         )
     
         return translation.strip()
-    
