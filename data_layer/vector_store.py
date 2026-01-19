@@ -10,11 +10,9 @@ class VectorStore:
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.dim = 384
 
-        # 📌 Persistence paths
         self.index_path = "data/faiss.index"
         self.text_path = "data/texts.pkl"
 
-        # 📌 Load existing memory if present
         if os.path.exists(self.index_path):
             self.index = faiss.read_index(self.index_path)
             with open(self.text_path, "rb") as f:
@@ -34,11 +32,11 @@ class VectorStore:
             [text],
             normalize_embeddings=True
         )
-        emb = np.array(emb, dtype="float32")  # ✅ FAISS SAFE
+        emb = np.array(emb, dtype="float32")
 
         self.index.add(emb)
         self.texts.append(text)
-        self._persist()  # ✅ SAVE TO DISK
+        self._persist()
 
     def search(self, query: str, k=3):
         if not self.texts:
