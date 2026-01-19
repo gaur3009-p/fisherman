@@ -1,19 +1,27 @@
 from faster_whisper import WhisperModel
 import torch
 
+
 class WhisperService:
     _model = None
 
     @classmethod
     def get_model(cls):
         if cls._model is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            compute_type = "float16" if device == "cuda" else "int8"
-
-            cls._model = WhisperModel(
-                "large-v3",
-                device=device,
-                compute_type=compute_type
-            )
+            if torch.cuda.is_available():
+                # Kaggle-safe GPU configuration
+                cls._model = WhisperModel(
+                    "medium",              # ⬅️ NOT large
+                    device="cuda",
+                    compute_type="int8",   # ⬅️ HUGE memory saver
+                    device_index=0
+                )
+            else:
+                # CPU fallback
+                cls._model = WhisperModel(
+                    "medium",
+                    device="cpu",
+                    compute_type="int8"
+                )
 
         return cls._model
