@@ -32,23 +32,20 @@ class TranslationService:
             generated_tokens = self.model.generate(
                 **inputs,
                 tgt_lang=self.tgt_lang,
-                max_new_tokens=256
+                max_new_tokens=256,
+                return_dict_in_generate=False,
+                output_scores=False
             )
     
-        # ---- FINAL SAFE DECODING (CRITICAL FIX) ----
-        tokens = generated_tokens
-    
         # Tensor → list
-        if hasattr(tokens, "tolist"):
-            tokens = tokens.tolist()
+        if hasattr(generated_tokens, "tolist"):
+            tokens = generated_tokens.tolist()
+        else:
+            tokens = generated_tokens
     
-        # Flatten nested lists
+        # Flatten
         while isinstance(tokens, list) and len(tokens) == 1:
             tokens = tokens[0]
-    
-        # Absolute safety check
-        if not isinstance(tokens, list) or not all(isinstance(t, int) for t in tokens):
-            raise RuntimeError(f"Invalid token format from model: {tokens}")
     
         translation = self.processor.tokenizer.decode(
             tokens,
@@ -56,3 +53,4 @@ class TranslationService:
         )
     
         return translation.strip()
+    
