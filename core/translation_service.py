@@ -25,20 +25,18 @@ class TranslationService:
             src_lang=self.src_lang,
             return_tensors="pt"
         ).to(self.device)
-
+    
         with torch.no_grad():
             generated_tokens = self.model.generate(
                 **inputs,
                 tgt_lang=self.tgt_lang,
                 max_new_tokens=256
             )
-
-        # ✅ remove batch dimension safely
-        token_ids = generated_tokens[0].cpu().tolist()
-
-        translation = self.processor.tokenizer.decode(
-            token_ids,
+    
+        # ✅ ENTERPRISE-SAFE DECODE (NO SHAPE ASSUMPTIONS)
+        translation = self.processor.batch_decode(
+            generated_tokens,
             skip_special_tokens=True
-        )
-
+        )[0]
+    
         return translation.strip()
