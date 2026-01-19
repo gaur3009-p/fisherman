@@ -37,11 +37,6 @@ dataset_manager = DatasetManager()
 # ---------------------------
 
 def process_fisherman_voice(audio):
-    """
-    Full enterprise pipeline:
-    Voice → STT → Translation → RAG → Reasoning → Dataset → TTS
-    """
-
     if audio is None:
         return (
             "No audio provided",
@@ -55,39 +50,46 @@ def process_fisherman_voice(audio):
 
     # 1. Save audio
     sample_rate, audio_np = audio
-    record_id = str(uuid.uuid4())
-    _, audio_path = audio_service.save(audio_np, sample_rate)
+    record_id, audio_path = audio_service.save(audio_np, sample_rate)
 
+    # 2. ASR
     native_text, language = asr_service.transcribe(audio_path)
 
-    # SAFETY: if transcription is empty or junk
-    if len(native_text) < 5:
+    if not native_text or len(native_text.strip()) < 5:
         native_text = "Unable to clearly transcribe speech."
-    
-    english_text = translation_service.to_english_from_text(native_text)    
-    # SAFETY: avoid hallucinated translations
-    if len(english_text) < 5:
+
+    # 3. Translation (ONLY for Odia)
+    if language == "or":
+        english_text = translation_service.to_english_from_text(native_text)
+    else:
+        english_text = native_text
+
+    if not english_text or len(english_text.strip()) < 5:
         english_text = "Translation unclear. Needs human review."
 
-    # 4. Retrieve RAG context (past NGO cases)
-    rag_context = rag_engine.retrieve(english_text)
+    # 4. RAG (skip junk)
+    if "unclear" in english_text.lower():
+        rag_context = "No similar past cases found."
+    else:
+        rag_context = rag_engine.retrieve(english_text)
 
-    # 5. Reasoning (enterprise intelligence)
+    # 5. Reasoning
     issue_title, sentiment, urgency, ngo_action = reasoning_engine.analyze(
         english_text
     )
 
-    # 6. Clean NGO-ready summary
+    # 6. Summary
     clean_summary = (
         f"The fisherman reports the following issue: {english_text}. "
         f"This case is categorized under '{issue_title}'. "
         f"The emotional condition of the fisherman appears {sentiment.lower()}."
     )
 
-    # 7. Add to vector store (institutional memory)
-    vector_store.add(english_text)
+    # 7. Vector memory (skip junk)
+    if "unclear" not in english_text.lower():
+        vector_store.add(english_text)
 
-    # 8. Persist EVERYTHING using DatasetManager (single source of truth)
+    # 8. Persist dataset
     dataset_manager.save_record({
         "record_id": record_id,
         "audio_path": audio_path,
@@ -102,15 +104,14 @@ def process_fisherman_voice(audio):
         "timestamp": datetime.utcnow()
     })
 
-    # 9. Generate TTS for field data collector
+    # 9. TTS
     tts_audio_path = tts_service.generate(
         f"Issue identified: {issue_title}. "
-        f"Fisherman emotional state: {sentiment}. "
-        f"Urgency level: {urgency}. "
+        f"Emotional state: {sentiment}. "
+        f"Urgency: {urgency}. "
         f"Suggested NGO action: {ngo_action}"
     )
 
-    # 10. Return outputs to UI
     return (
         native_text,
         english_text,
@@ -120,7 +121,6 @@ def process_fisherman_voice(audio):
         ngo_action,
         tts_audio_path
     )
-
 
 # ---------------------------
 # GRADIO ENTERPRISE UI
