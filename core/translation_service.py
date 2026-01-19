@@ -20,24 +20,24 @@ class TranslationService:
         # Language codes
         self.src_lang = "ory"   # Odia
         self.tgt_lang = "eng"   # English
-
     def to_english_from_text(self, odia_text: str) -> str:
         inputs = self.processor(
             text=odia_text,
             src_lang=self.src_lang,
             return_tensors="pt"
         ).to(self.device)
-
+    
         with torch.no_grad():
             generated_tokens = self.model.generate(
                 **inputs,
                 tgt_lang=self.tgt_lang,
-                max_length=256
+                max_new_tokens=256
             )
-
-        translation = self.processor.batch_decode(
-            generated_tokens,
+    
+        # IMPORTANT: decode only the first sequence
+        translation = self.processor.decode(
+            generated_tokens[0],
             skip_special_tokens=True
-        )[0]
-
+        )
+    
         return translation.strip()
