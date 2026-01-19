@@ -1,82 +1,43 @@
 import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
-from IndicTransToolkit.processor import IndicProcessor
+from transformers import AutoProcessor, SeamlessM4TModel
 
 
 class TranslationService:
     """
-    Odia → English translation using IndicTrans2 + IndicProcessor
-    (Official AI4Bharat inference method)
+    Odia → English using Meta SeamlessM4T-v2 (STRONGER than NLLB).
     """
 
     def __init__(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # Public, supported model
-        self.model_name = "ai4bharat/indictrans2-en-indic-dist-200M"
+        self.model_name = "facebook/seamless-m4t-v2-large"
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name,
-            trust_remote_code=True
-        )
-
-        # IMPORTANT: do NOT force flash_attention unless available
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(
-            self.model_name,
-            trust_remote_code=True,
-            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32
+        self.processor = AutoProcessor.from_pretrained(self.model_name)
+        self.model = SeamlessM4TModel.from_pretrained(
+            self.model_name
         ).to(self.device)
-
-        # Indic processor (critical)
-        self.processor = IndicProcessor(inference=True)
 
         # Language codes
-        self.src_lang = "ory_Orya"   # Odia
-        self.tgt_lang = "eng_Latn"   # English
+        self.src_lang = "ory"   # Odia
+        self.tgt_lang = "eng"   # English
 
     def to_english_from_text(self, odia_text: str) -> str:
-        """
-        Translate Odia text → English using official IndicTrans2 flow
-        """
-
-        # 1. Preprocess (VERY IMPORTANT)
-        batch = self.processor.preprocess_batch(
-            [odia_text],
+        inputs = self.processor(
+            text=odia_text,
             src_lang=self.src_lang,
-            tgt_lang=self.tgt_lang
-        )
-
-        # 2. Tokenize
-        inputs = self.tokenizer(
-            batch,
-            truncation=True,
-            padding="longest",
-            return_tensors="pt",
-            return_attention_mask=True
+            return_tensors="pt"
         ).to(self.device)
 
-        # 3. Generate
         with torch.no_grad():
             generated_tokens = self.model.generate(
                 **inputs,
-                use_cache=True,
-                min_length=0,
-                max_length=256,
-                num_beams=5,
-                num_return_sequences=1
+                tgt_lang=self.tgt_lang,
+                max_length=256
             )
 
-        # 4. Decode
-        decoded = self.tokenizer.batch_decode(
+        translation = self.processor.batch_decode(
             generated_tokens,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=True
-        )
+            skip_special_tokens=True
+        )[0]
 
-        # 5. Postprocess (entity + script fix)
-        translations = self.processor.postprocess_batch(
-            decoded,
-            lang=self.tgt_lang
-        )
-
-        return translations[0].strip()
+        return translation.strip()
