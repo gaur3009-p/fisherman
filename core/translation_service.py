@@ -20,6 +20,7 @@ class TranslationService:
         # Language codes
         self.src_lang = "ory"   # Odia
         self.tgt_lang = "eng"   # English
+
     def to_english_from_text(self, odia_text: str) -> str:
         inputs = self.processor(
             text=odia_text,
@@ -34,18 +35,21 @@ class TranslationService:
                 max_new_tokens=256
             )
     
-        # ---- BULLETPROOF DECODING ----
+        # ---- FINAL SAFE DECODING (CRITICAL FIX) ----
         tokens = generated_tokens
     
-        # Convert tensor → list
+        # Tensor → list
         if hasattr(tokens, "tolist"):
             tokens = tokens.tolist()
     
-        # Flatten nested lists safely
+        # Flatten nested lists
         while isinstance(tokens, list) and len(tokens) == 1:
             tokens = tokens[0]
     
-        # Now tokens is a flat list[int]
+        # Absolute safety check
+        if not isinstance(tokens, list) or not all(isinstance(t, int) for t in tokens):
+            raise RuntimeError(f"Invalid token format from model: {tokens}")
+    
         translation = self.processor.tokenizer.decode(
             tokens,
             skip_special_tokens=True
